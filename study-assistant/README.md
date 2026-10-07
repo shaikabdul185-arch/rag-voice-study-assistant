@@ -88,8 +88,8 @@ Run all commands from a terminal: Terminal on macOS/Linux, PowerShell on Windows
 ### Step 1: Get the code
 
 ```bash
-git clone https://github.com/shaikabdul185-arch/robotics-lab.git
-cd robotics-lab/study-assistant
+git clone https://github.com/shaikabdul185-arch/rag-voice-study-assistant.git
+cd rag-voice-study-assistant/study-assistant
 ```
 
 > `study` reads your settings from `study-assistant/.env`, so it works from any folder once
