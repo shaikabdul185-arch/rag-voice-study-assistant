@@ -28,6 +28,7 @@ sentence-transformers (local embeddings) · faster-whisper (speech-to-text) · p
 8. [Configuration](#8-configuration)
 9. [Troubleshooting](#9-troubleshooting)
 10. [Project structure](#10-project-structure)
+11. [License](#11-license)
 
 ---
 
@@ -480,3 +481,9 @@ study-assistant/
 ├── .env.example        copy to .env and add your API key
 └── pyproject.toml      dependencies and the `study` command
 ```
+
+---
+
+## 11. License
+
+Released under the [MIT License](../LICENSE).

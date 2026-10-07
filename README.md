@@ -20,3 +20,7 @@ cd rag-voice-study-assistant/study-assistant
 ```
 
 Then follow [study-assistant/README.md](study-assistant/README.md#3-setup-step-by-step).
+
+## License
+
+Released under the [MIT License](LICENSE).
