@@ -31,7 +31,8 @@ def _agent(settings, conn, verbose: bool = True):
     from .tools import Toolbox
 
     retriever = PgVectorRetriever(conn, _embedder(settings))
-    toolbox = Toolbox(retriever, anthropic.Anthropic(), settings.claude_model, settings.claude_effort)
+    toolbox = Toolbox(retriever, anthropic.Anthropic(), settings.claude_model, settings.claude_effort,
+                      use_fallbacks=settings.use_fallbacks)
 
     def on_tool(name: str, args: dict) -> None:
         if verbose:
@@ -167,8 +168,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import psycopg
+
     args = build_parser().parse_args(argv)
-    return args.func(load_settings(), args)
+    settings = load_settings()
+    try:
+        return args.func(settings, args)
+    except psycopg.OperationalError as exc:
+        print(f"Could not connect to the database at DATABASE_URL.\n  {str(exc).strip().splitlines()[0]}\n"
+              "Is it running? With Docker: `docker compose up -d` (from the study-assistant folder).",
+              file=sys.stderr)
+        return 1
+    except psycopg.errors.UndefinedTable:
+        print("The tables don't exist yet. Run `study init-db` first.", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

@@ -125,8 +125,16 @@ class StudyAgent:
 def friendly_api_error(exc: Exception) -> str:
     """Most-specific-first mapping of SDK errors to a message for the CLI."""
     no_credentials = isinstance(exc, TypeError) and "authentication method" in str(exc)
-    if no_credentials or isinstance(exc, anthropic.AuthenticationError):
-        return "Authentication failed: set ANTHROPIC_API_KEY (or run `ant auth login`)."
+    if no_credentials:
+        return ("No Anthropic API key found. Put ANTHROPIC_API_KEY=sk-ant-... in study-assistant/.env "
+                "(copy .env.example) or export it as an environment variable.")
+    if isinstance(exc, anthropic.AuthenticationError):
+        return ("Your Anthropic API key was rejected (401). Check that ANTHROPIC_API_KEY is copied "
+                "correctly and is still active at console.anthropic.com.")
+    if isinstance(exc, anthropic.PermissionDeniedError):
+        return f"Your API key doesn't have access to this request (403): {exc.message}"
+    if isinstance(exc, anthropic.NotFoundError):
+        return f"Model not found (404): check CLAUDE_MODEL. {exc.message}"
     if isinstance(exc, anthropic.RateLimitError):
         retry = exc.response.headers.get("retry-after", "a few")
         return f"Rate limited by the API; retry in {retry} seconds."

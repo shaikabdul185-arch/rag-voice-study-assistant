@@ -92,8 +92,8 @@ git clone https://github.com/shaikabdul185-arch/robotics-lab.git
 cd robotics-lab/study-assistant
 ```
 
-> **Important:** run every `study ...` command from inside the `study-assistant` folder.
-> That's where your `.env` file is read from.
+> `study` reads your settings from `study-assistant/.env`, so it works from any folder once
+> the virtual environment (Step 2) is active.
 
 ### Step 2: Create a virtual environment
 
@@ -151,7 +151,12 @@ Check it's running:
 docker compose ps        # STATUS should say "running" / "Up"
 ```
 
-### Step 5: Add your API key
+### Step 5: Add your own API key
+
+**Everyone who runs this uses their own Anthropic API key**, and usage is billed to that key's
+account. No key is included in the repository. Choose **one** of these two ways:
+
+**Option A: a `.env` file (recommended)**
 
 macOS / Linux:
 ```bash
@@ -168,7 +173,31 @@ ANTHROPIC_API_KEY=sk-ant-...your key...
 DATABASE_URL=postgresql://study:study@localhost:5432/study
 ```
 
-> `.env` is in `.gitignore`. Never commit your API key.
+**Option B: an environment variable** (useful for CI or a one-off run)
+
+macOS / Linux:
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...your key...
+```
+Windows (PowerShell):
+```powershell
+$env:ANTHROPIC_API_KEY="sk-ant-...your key..."
+```
+If both are set, the environment variable wins.
+
+> **Keep your key private.** `.env` is listed in `.gitignore`, so git won't pick it up. Never
+> paste your key into code, issues or screenshots. If a key leaks, delete it at
+> console.anthropic.com → *API Keys* and create a new one.
+
+**Check that your key works.** After Step 6 and ingesting the sample data (section 4.1),
+`study ask "hello"` should print a reply. If the key is the problem, you'll see one of these:
+
+| Message | Meaning |
+|---|---|
+| `No Anthropic API key found...` | no key in `.env` or the environment; check the file name is exactly `.env` (not `.env.txt`) |
+| `Your Anthropic API key was rejected (401)...` | the key is wrong, incomplete, or was deleted |
+| `Your API key doesn't have access to this request (403)...` | the key's workspace or org can't use this model or feature |
+| `Model not found (404)...` | `CLAUDE_MODEL` is misspelled or not available to your account |
 
 ### Step 6: Create the tables
 
@@ -354,8 +383,8 @@ pytest
 ```
 Expected output:
 ```
-....................s                                     [100%]
-20 passed, 1 skipped
+...........................s                                 [100%]
+26 passed, 1 skipped
 ```
 
 - **The unit tests use a fake Claude client and a fake search backend.** They check chunking,
@@ -382,15 +411,16 @@ Set these in `.env` or as environment variables. Environment variables take prio
 |---|---|---|
 | `ANTHROPIC_API_KEY` | – | required for `ask`, `chat`, `voice` |
 | `DATABASE_URL` | `postgresql://study:study@localhost:5432/study` | matches `docker-compose.yml` |
-| `CLAUDE_MODEL` | `claude-opus-5-5` | the Claude model used by the agent |
+| `CLAUDE_MODEL` | `claude-opus-5-5` | `claude-opus-5-5` (best quality, $4/$20 per million input/output tokens) or `claude-sonnet-5-5` (faster and cheaper, $2/$10). Haiku is **not** supported: the app uses adaptive thinking and `effort`, which Haiku 4.5 doesn't accept. |
+| `CLAUDE_FALLBACKS` | `on` | `off` disables the server-side refusal fallback (see below) |
 | `CLAUDE_EFFORT` | `medium` | `low`, `medium`, `high`, `xhigh`, `max`: higher means more thorough, slower and more expensive |
 | `EMBED_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | must produce 384-dimension vectors (see `config.EMBED_DIM`) |
 | `WHISPER_MODEL` | `base.en` | `tiny.en` is faster; `small.en` is more accurate |
 | `EMBED_BACKEND` | `sentence-transformers` | `hash` is a test-only offline stand-in. **Don't use it for real notes.** |
 
 **Refusal fallback:** if Claude declines a request, the API automatically retries it on a
-fallback model in the same call (`fallbacks="default"`). This is set in `study_assistant/tools.py`
-(`Toolbox(..., use_fallbacks=False)` turns it off).
+fallback model in the same call (`fallbacks="default"`, beta `server-side-fallback-2026-07-01`).
+If your account rejects that beta, set `CLAUDE_FALLBACKS=off`.
 
 ---
 
@@ -399,9 +429,10 @@ fallback model in the same call (`fallbacks="default"`). This is set in `study_a
 | Problem | Fix |
 |---|---|
 | `study: command not found` | Activate the virtual environment (Step 2), then run `pip install -e .` again. |
-| `connection refused` / `could not connect to server` | The database isn't running. Start Docker Desktop and run `docker compose up -d`. |
+| `Could not connect to the database` / `connection refused` | The database isn't running. Start Docker Desktop and run `docker compose up -d`. |
 | `port is already allocated` on `docker compose up` | Something else is using port 5432, often a local Postgres. Change the port mapping in `docker-compose.yml` to `"5433:5432"` and set `DATABASE_URL=postgresql://study:study@localhost:5433/study`. |
-| `Authentication failed: set ANTHROPIC_API_KEY` | `.env` is missing or the key is empty. Make sure you run `study` from the `study-assistant` folder, where `.env` lives. |
+| `No Anthropic API key found` | Create `study-assistant/.env` from `.env.example` and paste your key, or set the `ANTHROPIC_API_KEY` environment variable (Step 5). |
+| `Your Anthropic API key was rejected (401)` | Re-copy the key from console.anthropic.com. There should be no quotes or spaces around it. |
 | `Could not load embedding model ...` | The first run needs internet to download the model from Hugging Face. Check your connection, VPN or proxy. |
 | `relation "chunks" does not exist` | Run `study init-db`. |
 | `type "vector" does not exist` / `extension "vector" is not available` | Your Postgres has no pgvector. Use the Docker setup, or install pgvector (below). |
