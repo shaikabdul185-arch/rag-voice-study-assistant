@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "study-assistant"
+version = "0.1.0"
+description = "Retrieval-augmented, tool-calling study agent with a voice mode"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=1.11",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3",
+    "pypdf>=4.0",
+    "numpy>=1.26",
+    "pydantic>=2.6",
+    "sentence-transformers>=3.0",
+]
+
+[project.optional-dependencies]
+voice = [
+    "faster-whisper>=1.0",
+    "sounddevice>=0.4",
+    "pyttsx3>=2.90",
+]
+dev = ["pytest>=8"]
+
+[project.scripts]
+study = "study_assistant.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["study_assistant*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
